@@ -1,7 +1,8 @@
 {% macro render_post(p, sep=False) %}
-  <div>
-    <h2><a href="blog{{p.id}}">{{p.title}}</a></h2>
+  <div class="post">
+    <h2><a href="blog{{p.key().id()}}" class="post-title">{{p.title}}</a> 
+      | {{p.created.date()}}
+    </h2>
     <p>{{p.post}}</p>
-    <p>{{p.created.date()}}</p>
   </div>
 {% endmacro %}

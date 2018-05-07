@@ -36,10 +36,6 @@ class Post(db.Model):
     post = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
 
-    @staticmethod
-    def to_tuple(p):
-        return (p.title, p.post, p.created.date(), p.key().id()) 
-
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -51,6 +47,7 @@ class Handler(webapp2.RequestHandler):
 
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
+
 
 class MainPage(Handler):
     def get(self):

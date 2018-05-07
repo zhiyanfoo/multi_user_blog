@@ -1,17 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="post">
-  <label>
-    <div><p>Title</p></div>
-    <input type="string" name="title" value="{{title}}">
-  </label>
-  <label>
-    <div><p>Post</p></div>
-    <textarea name="post">{{post}}</textarea>
-  </label>
-  <div>
-  <input type="submit">
-  </div>
-</form>
+<div class="form-wrap">
+  <form method="post">
+    <label>
+      <div><p>Title</p></div>
+      <input type="string" name="title" value="{{title}}">
+    </label>
+    <label>
+      <div><p>Post</p></div>
+      <div class="">
+        <textarea name="post">{{post}}</textarea>
+      </div>
+    </label>
+    <div>
+    <input type="submit">
+    </div>
+  </form>
+</div>
 {% endblock %}

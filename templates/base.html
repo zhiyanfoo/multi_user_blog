@@ -5,10 +5,14 @@
     <meta charset="utf-8">
     <title>Blog</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   </head>
   <body>
-    <h1><a class="nodecoration" href="/">Blog</a></h1>
-    {% block content %}
-    {% endblock %}
+    <div class="top-wrap">
+      <div><h1><a class="nodecoration" href="/">Blog</a></h1></div>
+      {% block content %}
+      {% endblock %}
+    </div>
   </body>
 </html>

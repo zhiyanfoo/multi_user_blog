@@ -2,9 +2,12 @@
 {% from "macros.html" import render_post %}
 
 {% block content %}
-<a href="newpost"><p>new post</p></a>
-{% for p in blogs %}
-{{ render_post(p) }}
-{% endfor %}
+<div ><a href="newpost"><p id="new-post">new post</p></a></div>
+<div class="posts">
+  <div class="post-top-title"><h3>Posts</h3></div>
+  {% for p in blogs %}
+  {{ render_post(p) }}
+  {% endfor %}
+</div>
 
 {% endblock %}
