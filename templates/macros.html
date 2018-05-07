@@ -1,0 +1,7 @@
+{% macro render_post(p, sep=False) %}
+  <div>
+    <h2><a href="blog{{p.id}}">{{p.title}}</a></h2>
+    <p>{{p.post}}</p>
+    <p>{{p.created.date()}}</p>
+  </div>
+{% endmacro %}

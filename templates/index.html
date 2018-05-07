@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_post %}
+
+{% block content %}
+<a href="newpost"><p>new post</p></a>
+{% for p in blogs %}
+{{ render_post(p) }}
+{% endfor %}
+
+{% endblock %}
