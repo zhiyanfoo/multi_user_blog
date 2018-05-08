@@ -156,7 +156,6 @@ class Posts(Handler):
         posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC")
         self.render("index.html", blogs=posts)
 
-# TODO: implement get method so that refreshing doesn't cause pop-up
 class Login(Handler):
     def err_render(self, username, msg):
         self.clear_cookies()
