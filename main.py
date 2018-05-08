@@ -242,10 +242,46 @@ class BlogPage(Handler):
             self.write("404: Blog not found.")
 
 class EditPost(Handler):
+    def render_front(self):
+        pass
+
     def post(self, name, id):
-        if self.user_owns_page(name):
-            page_user = self.get_user(name)
-            p = Post.get_by_id(int(id), parent=page_user.key())
+        if not self.user_owns_page(name):
+            self.clear_cookies()
+            self.redirect('/')
+        page_user = self.get_user(name)
+        p = Post.get_by_id(int(id), parent=page_user.key())
+        name = page_user.key().name()
+
+        title = self.request.get("title")
+        post = self.request.get("post")
+        if not title and not post:
+            self.render(
+                "editpost.html",
+                title=p.title, 
+                post=p.post,
+                page_user=name,
+                p=p, 
+                username=name)
+            return
+
+        if not (title and post):
+            self.render(
+                "editpost.html",
+                title=title, 
+                post=post,
+                page_user=name,
+                p=p, 
+                username=name,
+                error="Error: All fields need to be filled.")
+            return
+
+        p.title = title
+        p.post = post
+        p.put()
+        self.redirect("/b/"+ name + "/" + id)
+
+
 
 
 def new_secrets(pw):

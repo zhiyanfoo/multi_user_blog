@@ -23,27 +23,25 @@
 
 {% endmacro %}
 
-{% macro edit_post(title, post, error, sep=False) %}
-  {% set post_path = "/b/{}/{}".format(page_user, p.key().id()) %}
-  <div class="post">
-    <h2><a href={{post_path}} class="post-title">{{p.title}}</a> 
-      | {{p.created.date()}}
-    </h2>
-    <p>{{p.post}}</p>
-    {% if page_user == cur_user_name %}
-      <!-- <form method="post" action="/b/{{page_user}}/{{p.key().id()}}/delete"> -->
-      <form method="post" action={{post_path + "/edit"}}>
-        <label>
-          <input type="submit" name="edit" value="edit">
-        </label>
-      </form>
-      <form method="post" action={{post_path}}>
-        <label>
-          <input type="submit" name="delete" value="delete">
-        </label>
-      </form>
-    {% endif %}
+{% macro edit_content(title, post, error, sep=False) %}
+<div class="form-wrap">
+  <form method="post">
+    <label>
+      <div><p>Title</p></div>
+      <input type="string" name="title" value="{{title}}">
+    </label>
+    <label>
+      <div><p>Post</p></div>
+      <div class="">
+        <textarea name="post">{{post}}</textarea>
+      </div>
+    </label>
     <div>
+    <input type="submit">
+    </div>
+  </form>
+  <div>
+    <p>{{error}}</p>
   </div>
-
+</div>
 {% endmacro %}

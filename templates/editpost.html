@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% from "macros.html" import edit_content %}
+{% from "macros.html" import edit_content, render_post %}
 
 {% block content %}
+{{ render_post(page_user, p) }}
 {{ edit_content(title, post, error) }}
 {% endblock %}
