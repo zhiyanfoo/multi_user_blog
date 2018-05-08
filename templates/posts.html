@@ -2,11 +2,13 @@
 {% from "macros.html" import render_post %}
 
 {% block content %}
-<div ><a href="newpost"><p id="new-post">new post</p></a></div>
+{% if page_user == username %}
+<div ><a href="/newpost"><p id="new-post">new post</p></a></div>
+{% endif %}
 <div class="posts">
   <div class="post-top-title"><h3>Posts</h3></div>
   {% for p in blogs %}
-  {{ render_post(p) }}
+  {{ render_post(page_user, p, username) }}
   {% endfor %}
 </div>
 

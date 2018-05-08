@@ -1,8 +1,49 @@
-{% macro render_post(p, sep=False) %}
+{% macro render_post(page_user, p, cur_user_name, sep=False) %}
+  {% set post_path = "/b/{}/{}".format(page_user, p.key().id()) %}
   <div class="post">
-    <h2><a href="blog{{p.key().id()}}" class="post-title">{{p.title}}</a> 
+    <h2><a href={{post_path}} class="post-title">{{p.title}}</a> 
       | {{p.created.date()}}
     </h2>
     <p>{{p.post}}</p>
+    {% if page_user == cur_user_name %}
+      <!-- <form method="post" action="/b/{{page_user}}/{{p.key().id()}}/delete"> -->
+      <form method="post" action={{post_path + "/edit"}}>
+        <label>
+          <input type="submit" name="edit" value="edit">
+        </label>
+      </form>
+      <form method="post" action={{post_path}}>
+        <label>
+          <input type="submit" name="delete" value="delete">
+        </label>
+      </form>
+    {% endif %}
+    <div>
   </div>
+
+{% endmacro %}
+
+{% macro edit_post(title, post, error, sep=False) %}
+  {% set post_path = "/b/{}/{}".format(page_user, p.key().id()) %}
+  <div class="post">
+    <h2><a href={{post_path}} class="post-title">{{p.title}}</a> 
+      | {{p.created.date()}}
+    </h2>
+    <p>{{p.post}}</p>
+    {% if page_user == cur_user_name %}
+      <!-- <form method="post" action="/b/{{page_user}}/{{p.key().id()}}/delete"> -->
+      <form method="post" action={{post_path + "/edit"}}>
+        <label>
+          <input type="submit" name="edit" value="edit">
+        </label>
+      </form>
+      <form method="post" action={{post_path}}>
+        <label>
+          <input type="submit" name="delete" value="delete">
+        </label>
+      </form>
+    {% endif %}
+    <div>
+  </div>
+
 {% endmacro %}
