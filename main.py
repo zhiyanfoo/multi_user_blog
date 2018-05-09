@@ -143,7 +143,7 @@ class BlogPost(Handler):
             self.redirect("/")
         
 
-class HomePage(Handler):
+class MainPage(Handler):
     def get(self):
         user = self.valid_user()
         if user:
@@ -276,8 +276,6 @@ class EditPost(Handler):
         self.redirect("/b/"+ name + "/" + id)
 
 
-
-
 def new_secrets(pw):
     pw_hash, pw_salt = secret_salt(pw)
     cookie_token = make_token()
@@ -303,7 +301,7 @@ def valid_pw(pw, salt, h):
     return pw_hash == h
 
 app = webapp2.WSGIApplication([
-    ('/', HomePage),
+    ('/', MainPage),
     ('/login', Login),
     ('/signup', SignUp),
     ('/newpost', NewPost),
