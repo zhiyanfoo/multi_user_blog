@@ -1,27 +1,93 @@
-{% macro render_post(page_user, p, cur_user_name, sep=False) %}
-  {% set post_path = "/b/{}/{}".format(page_user, p.key().id()) %}
+{% macro render_post(page_user_name, p, cur_user_name, liked, sep=False) %}
+  {% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
   <div class="post">
     <h2><a href={{post_path}} class="post-title">{{p.title}}</a> 
       | {{p.created.date()}}
     </h2>
     <p>{{p.post}}</p>
-    {% if page_user == cur_user_name %}
-      <!-- <form method="post" action="/b/{{page_user}}/{{p.key().id()}}/delete"> -->
+    {% if page_user_name == cur_user_name %}
       <form method="post" action={{post_path + "/edit"}}>
         <label>
           <input type="submit" name="edit" value="edit">
         </label>
       </form>
-      <form method="post" action={{post_path}}>
+      <form method="post" action={{post_path + "/delete"}}>
         <label>
           <input type="submit" name="delete" value="delete">
         </label>
       </form>
     {% endif %}
+    {% if cur_user_name and page_user_name != cur_user_name %}
+      {% if liked %}
+         <form method="post" action={{post_path + "/togglelike"}}>
+           <label>
+             <input type="submit" name="unlike" value="unlike">
+           </label>
+         </form>
+        {% else %}
+          <form method="post" action={{post_path + "/togglelike"}}>
+            <label>
+              <input type="submit" name="like" value="like">
+            </label>
+          </form>
+        {% endif %}
+    {% endif %}
+      <div><p>Likes: {{p.likes}}</p></div>
+
+    {% if cur_user_name %}
+       <form method="post" action={{post_path + "/AddComent"}}>
+         <label>
+           <input type="submit" name="add_comment" value="Add Comment">
+         </label>
+       </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro render_comment(comment_user_name, c, cur_user_name, sep=False) %}
+  {% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+  <div class="comment">
+    <h2>{{c.title}} | {{c.created.date()}}</h2>
+    <p>{{c.post}}</p>
+    {% if page_user_name == cur_user_name %}
+      <form method="post" action={{post_path + "/edit"}}>
+        <label>
+          <input type="submit" name="edit" value="edit">
+        </label>
+      </form>
+      <form method="post" action={{post_path + "/delete"}}>
+        <label>
+          <input type="submit" name="delete" value="delete">
+        </label>
+      </form>
+    {% endif %}
+    {% if cur_user_name and page_user_name != cur_user_name %}
+      {% if liked %}
+         <form method="post" action={{post_path + "/togglelike"}}>
+           <label>
+             <input type="submit" name="unlike" value="unlike">
+           </label>
+         </form>
+        {% else %}
+          <form method="post" action={{post_path + "/togglelike"}}>
+            <label>
+              <input type="submit" name="like" value="like">
+            </label>
+          </form>
+        {% endif %}
+    {% endif %}
+      <div><p>Likes: {{p.likes}}</p></div>
+
+    {% if cur_user_name %}
+       <form method="post" action={{post_path + "/AddComent"}}>
+         <label>
+           <input type="submit" name="add_comment" value="Add Comment">
+         </label>
+       </form>
+    {% endif %}
   </div>
 
 {% endmacro %}
-
 {% macro edit_content(title, post, error, sep=False) %}
 <div class="form-wrap">
   <form method="post">

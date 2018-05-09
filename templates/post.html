@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_post, render_comment %}
+
+
+{% block content %}
+<div class="posts">
+  {{ render_post(page_user_name, p, username, liked) }}
+</div>
+<div>
+  {{ render_comment(comment_user_name, c, username}}
+</div>
+{% endblock %}

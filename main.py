@@ -34,6 +34,7 @@ class Post(db.Model):
     title = db.StringProperty(required=True)
     post = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
+    likes = db.IntegerProperty(default=0)
 
 class User(db.Model):
     pw_hash = db.StringProperty(required=True)
@@ -41,6 +42,12 @@ class User(db.Model):
     cookie_hash = db.StringProperty(required=True)
     cookie_salt = db.StringProperty(required=True)
     cookie_datetime = db.DateTimeProperty(required=True, auto_now=True)
+    liked = db.ListProperty(db.Key)
+
+class Comment(db.Model):
+    title = db.StringProperty(required=True)
+    post = db.TextProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -74,30 +81,23 @@ class Handler(webapp2.RequestHandler):
                 return user
 
     def get_user(self, name):
-        if name:
-            return User.get_by_key_name(name)
+        return User.get_by_key_name(name) if name else None
 
-    def get_cur_user_name(self):
-        cur_user = self.valid_user()
-        cur_user_name = cur_user.key().name() if cur_user else None
-        return cur_user_name
+    def get_user_name(self, user):
+        return user.key().name() if user else None
 
     def user_owns_page(self, page_user_name):
         return self.valid_user().key().name() == page_user_name
 
-
-    def render_posts(self, page_user, cur_user_name=None):
-        q = db.Query(Post)
-        page_user_key = page_user.key()
-        q.ancestor(page_user_key)
-        q.order('-created')
-        self.render("posts.html", blogs=q, page_user=page_user_key.name(),
-                    username=cur_user_name)
+    def has_liked(self, user, post):
+        q = db.Query(user)
+        q.filter("liked =", post.key())
+        return q.get()
 
 class NewPost(Handler):
     def render_front(self, username, title="", post="", error="", ):
         self.render("new_post.html", username=username, title=title, post=post,
-                    error=error, page_user=username)
+                    error=error, page_user_name=username)
 
     def get(self):
         user = self.valid_user()
@@ -127,21 +127,12 @@ class NewPost(Handler):
 
 class BlogPost(Handler):
     def get(self, name, id):
-        cur_user_name = self.get_cur_user_name()
+        user = self.valid_user()
+        cur_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
         p = Post.get_by_id(int(id), parent=page_user.key())
-        self.render("blog_post.html", p=p, page_user=name, username=cur_user_name)
-
-    def post(self, name, id):
-        if self.user_owns_page(name):
-            page_user = self.get_user(name)
-            p = Post.get_by_id(int(id), parent=page_user.key())
-            p.delete()
-            self.redirect("/b/" + name)
-        else:
-            self.clear_cookies()
-            self.redirect("/")
-        
+        self.render("post.html", p=p, page_user_name=name, username=cur_user_name,
+                    liked=self.has_liked(user, p))
 
 class MainPage(Handler):
     def get(self):
@@ -228,10 +219,18 @@ class Logout(Handler):
 
 class BlogPage(Handler):
     def get(self, name):
+        user = self.valid_user()
+        cur_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
-        cur_user_name = self.get_cur_user_name()
         if page_user:
-            self.render_posts(page_user, cur_user_name)
+            q = db.Query(Post)
+            page_user_key = page_user.key()
+            q.ancestor(page_user_key)
+            q.order('-created')
+            postsliked = ((p, self.has_liked(page_user, p)) for p in q)
+            self.render("posts.html", postsliked=postsliked,
+                        page_user_name=page_user_key.name(),
+                        username=cur_user_name)
         else:
             self.write("404: Blog not found.")
 
@@ -254,7 +253,7 @@ class EditPost(Handler):
                 "editpost.html",
                 title=p.title, 
                 post=p.post,
-                page_user=name,
+                page_user_name=name,
                 p=p, 
                 username=name)
             return
@@ -264,7 +263,7 @@ class EditPost(Handler):
                 "editpost.html",
                 title=title, 
                 post=post,
-                page_user=name,
+                page_user_name=name,
                 p=p, 
                 username=name,
                 error="Error: All fields need to be filled.")
@@ -274,6 +273,43 @@ class EditPost(Handler):
         p.post = post
         p.put()
         self.redirect("/b/"+ name + "/" + id)
+
+class DeletePost(Handler):
+    def post(self, name, id):
+        if self.user_owns_page(name) and self.request.get("delete"):
+            page_user = self.get_user(name)
+            p = Post.get_by_id(int(id), parent=page_user.key())
+            p.delete()
+            self.redirect("/b/" + name)
+        else:
+            self.clear_cookies()
+            self.redirect("/")
+
+class ToggleLike(Handler):
+    def post(self, name, id):
+        cur_user = self.valid_user()
+        page_user = self.get_user(name)
+        if not (cur_user and page_user):
+            redirect("/")
+            return
+
+        p = Post.get_by_id(int(id), parent=page_user.key())
+        if cur_user.key() != page_user.key():
+            if self.has_liked(cur_user, p):
+                cur_user.liked.remove(p.key())
+                cur_user.put()
+                p.likes -= 1
+                p.put()
+            else:
+                cur_user.liked.append(p.key())
+                cur_user.put()
+                p.likes += 1
+                p.put()
+
+        self.redirect(self.request.referer)
+
+class AddComment(Handler):
+    pass
 
 
 def new_secrets(pw):
@@ -309,4 +345,7 @@ app = webapp2.WSGIApplication([
     Route('/b/<name:\w+>', BlogPage),
     Route(r'/b/<name:\w+>/<id:\d+>', BlogPost),
     Route(r'/b/<name:\w+>/<id:\d+>/edit', EditPost),
+    Route(r'/b/<name:\w+>/<id:\d+>/delete', DeletePost),
+    Route(r'/b/<name:\w+>/<id:\d+>/togglelike', ToggleLike),
+    Route(r'/b/<name:\w+>/<id:\d+>/addcomment', AddComment),
 ], debug=True)

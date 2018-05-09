@@ -1,7 +1,11 @@
 {% extends "boilerplate.html" %}
 
 {% block wrap %}
-<div><h1><a class="nodecoration" href="/b/{{page_user}}">{{page_user}}'s Blog</a></h1></div>
+<div>
+  <h1><a class="nodecoration" href="/b/{{page_user_name}}">
+      {{page_user_name}}'s Blog</a>
+  </h1>
+</div>
 <div class="user">
   {% if username %}
     <p>Logged in as: {{username}}</p>
