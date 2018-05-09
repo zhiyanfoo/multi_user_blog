@@ -45,8 +45,8 @@ class User(db.Model):
     liked = db.ListProperty(db.Key)
 
 class Comment(db.Model):
-    title = db.StringProperty(required=True)
-    post = db.TextProperty(required=True)
+    comment = db.TextProperty(required=True)
+    user = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add=True)
 
 class Handler(webapp2.RequestHandler):
@@ -86,13 +86,17 @@ class Handler(webapp2.RequestHandler):
     def get_user_name(self, user):
         return user.key().name() if user else None
 
-    def user_owns_page(self, page_user_name):
-        return self.valid_user().key().name() == page_user_name
+    def cur_user_match(self, user_name):
+        return self.valid_user().key().name() == user_name
 
     def has_liked(self, user, post):
         q = db.Query(user)
         q.filter("liked =", post.key())
         return q.get()
+
+    def get_post(self, user, id):
+        return Post.get_by_id(int(id), parent=user.key())
+
 
 class NewPost(Handler):
     def render_front(self, username, title="", post="", error="", ):
@@ -130,9 +134,17 @@ class BlogPost(Handler):
         user = self.valid_user()
         cur_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
-        p = Post.get_by_id(int(id), parent=page_user.key())
-        self.render("post.html", p=p, page_user_name=name, username=cur_user_name,
-                    liked=self.has_liked(user, p))
+        if not page_user:
+            self.redirect("/")
+            return
+        p = self.get_post(page_user, id)
+        liked = self.has_liked(user, p) if user else None
+        c = db.Query(Comment)
+        post_key = page_user.key()
+        c.ancestor(post_key)
+        c.order('-created')
+        self.render("post.html", comments=c, p=p, page_user_name=name,
+                    username=cur_user_name, liked=liked)
 
 class MainPage(Handler):
     def get(self):
@@ -235,15 +247,12 @@ class BlogPage(Handler):
             self.write("404: Blog not found.")
 
 class EditPost(Handler):
-    def render_front(self):
-        pass
-
     def post(self, name, id):
-        if not self.user_owns_page(name):
+        if not self.cur_user_match(name):
             self.clear_cookies()
             self.redirect('/')
         page_user = self.get_user(name)
-        p = Post.get_by_id(int(id), parent=page_user.key())
+        p = self.get_post(page_user, id)
         name = page_user.key().name()
 
         title = self.request.get("title")
@@ -276,9 +285,9 @@ class EditPost(Handler):
 
 class DeletePost(Handler):
     def post(self, name, id):
-        if self.user_owns_page(name) and self.request.get("delete"):
+        if self.cur_user_match(name) and self.request.get("delete"):
             page_user = self.get_user(name)
-            p = Post.get_by_id(int(id), parent=page_user.key())
+            p = self.get_post(page_user, id)
             p.delete()
             self.redirect("/b/" + name)
         else:
@@ -293,7 +302,7 @@ class ToggleLike(Handler):
             redirect("/")
             return
 
-        p = Post.get_by_id(int(id), parent=page_user.key())
+        p = self.get_post(page_user, id)
         if cur_user.key() != page_user.key():
             if self.has_liked(cur_user, p):
                 cur_user.liked.remove(p.key())
@@ -309,7 +318,55 @@ class ToggleLike(Handler):
         self.redirect(self.request.referer)
 
 class AddComment(Handler):
-    pass
+    def post(self, id, name):
+        cur_user = self.valid_user()
+        if not cur_user:
+            self.redirect('/')
+            return
+        cur_user_name = self.get_user_name(cur_user)
+        page_user = self.get_user(name)
+        post = self.get_post(page_user, id)
+        Comment(comment=self.request.get("comment"), 
+                user=cur_user_name,
+                parent=post).put()
+        self.redirect(self.request.referer)
+
+class DeleteComment(Handler):
+    def post(self, id, name, c_user_name, c_id):
+        if self.cur_user_match(c_user_name):
+            page_user = self.get_user(name)
+            post = self.get_post(page_user, id)
+            comment = Comment.get_by_id(int(c_id), parent=post.key())
+            comment.delete()
+            self.redirect(self.request.referer)
+        else:
+            self.clear_cookies()
+            self.redirect("/")
+
+class EditComment(Handler):
+    def post(self, id, name, c_user_name, c_id):
+        if not self.cur_user_match(name):
+            self.clear_cookies()
+            self.redirect('/')
+
+        cur_user = self.valid_user()
+        cur_user_name = self.get_user_name(cur_user)
+        page_user = self.get_user(name)
+        p = self.get_post(page_user, id)
+        c = Comment.get_by_id(int(c_id), parent=p.key())
+        comment = self.request.get("comment")
+        if not comment:
+            self.render("editcomment.html", 
+                        c=c,
+                        page_user_name=name,
+                        liked=self.has_liked(cur_user, p),
+                        p=p,
+                        username=cur_user_name)
+            return
+
+        c.comment = comment
+        c.put()
+        self.redirect("/b/{}/{}".format(name, id))
 
 
 def new_secrets(pw):
@@ -348,4 +405,6 @@ app = webapp2.WSGIApplication([
     Route(r'/b/<name:\w+>/<id:\d+>/delete', DeletePost),
     Route(r'/b/<name:\w+>/<id:\d+>/togglelike', ToggleLike),
     Route(r'/b/<name:\w+>/<id:\d+>/addcomment', AddComment),
+    Route(r'/b/<name:\w+>/<id:\d+>/<c_user_name:\d+>/<c_id:\d+>/delete', DeleteComment),
+    Route(r'/b/<name:\w+>/<id:\d+>/<c_user_name:\d+>/<c_id:\d+>/edit', EditComment),
 ], debug=True)

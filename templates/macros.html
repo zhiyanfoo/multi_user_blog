@@ -33,61 +33,29 @@
         {% endif %}
     {% endif %}
       <div><p>Likes: {{p.likes}}</p></div>
-
-    {% if cur_user_name %}
-       <form method="post" action={{post_path + "/AddComent"}}>
-         <label>
-           <input type="submit" name="add_comment" value="Add Comment">
-         </label>
-       </form>
-    {% endif %}
   </div>
 {% endmacro %}
 
-{% macro render_comment(comment_user_name, c, cur_user_name, sep=False) %}
-  {% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+{% macro render_comment(c, cur_user_name, prefix, sep=False) %}
+{% set comment_path = prefix + "/{}/{}".format(c.user, c.key().id()) %}
   <div class="comment">
-    <h2>{{c.title}} | {{c.created.date()}}</h2>
-    <p>{{c.post}}</p>
-    {% if page_user_name == cur_user_name %}
-      <form method="post" action={{post_path + "/edit"}}>
+    <h2>{{c.user}} | {{c.created.date()}}</h2>
+    <p>{{c.comment}}</p>
+    {% if c.user == cur_user_name %}
+      <form method="post" action={{comment_path + "/edit"}}>
         <label>
           <input type="submit" name="edit" value="edit">
         </label>
       </form>
-      <form method="post" action={{post_path + "/delete"}}>
+      <form method="post" action={{comment_path + "/delete"}}>
         <label>
           <input type="submit" name="delete" value="delete">
         </label>
       </form>
     {% endif %}
-    {% if cur_user_name and page_user_name != cur_user_name %}
-      {% if liked %}
-         <form method="post" action={{post_path + "/togglelike"}}>
-           <label>
-             <input type="submit" name="unlike" value="unlike">
-           </label>
-         </form>
-        {% else %}
-          <form method="post" action={{post_path + "/togglelike"}}>
-            <label>
-              <input type="submit" name="like" value="like">
-            </label>
-          </form>
-        {% endif %}
-    {% endif %}
-      <div><p>Likes: {{p.likes}}</p></div>
-
-    {% if cur_user_name %}
-       <form method="post" action={{post_path + "/AddComent"}}>
-         <label>
-           <input type="submit" name="add_comment" value="Add Comment">
-         </label>
-       </form>
-    {% endif %}
   </div>
-
 {% endmacro %}
+
 {% macro edit_content(title, post, error, sep=False) %}
 <div class="form-wrap">
   <form method="post">

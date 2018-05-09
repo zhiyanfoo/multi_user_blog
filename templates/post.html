@@ -3,10 +3,32 @@
 
 
 {% block content %}
+{% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
 <div class="posts">
   {{ render_post(page_user_name, p, username, liked) }}
-</div>
-<div>
-  {{ render_comment(comment_user_name, c, username}}
+  <div class=post>
+    <h2>Comments</h2>
+    {% for c in comments %}
+      {{ render_comment(c, username, post_path) }}
+    {% endfor %}
+  </div>
+  {% if username %}
+    <div class="form-wrap">
+      <form method="post" action={{post_path + "/addcomment"}}>
+        <label>
+          <div><p>comment</p></div>
+          <div>
+            <textarea name="comment">{{comment}}</textarea>
+          </div>
+        </label>
+        <label>
+          <input type="submit" name="add_comment" value="Add Comment">
+        </label>
+      </form>
+      <div>
+        <p>{{error}}</p>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

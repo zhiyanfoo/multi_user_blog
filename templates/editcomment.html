@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "macros.html" import edit_content, render_post %}
+
+{% block content %}
+{% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+{% set comment_path = post_path + "/{}/{}".format(c.user, c.key().id()) %}
+<div class="posts">
+  {{ render_post(page_user_name, p, username, liked) }}
+  {% if username %}
+    <div class="form-wrap">
+      <form method="post" action={{comment_path + "/edit"}}>
+        <label>
+          <div><p>comment</p></div>
+          <div>
+            <textarea name="comment">{{c.comment}}</textarea>
+          </div>
+        </label>
+        <label>
+          <input type="submit" name="edit-comment" value="edit comment">
+        </label>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
