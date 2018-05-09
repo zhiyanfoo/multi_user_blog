@@ -140,7 +140,7 @@ class BlogPost(Handler):
         p = self.get_post(page_user, id)
         liked = self.has_liked(user, p) if user else None
         c = db.Query(Comment)
-        post_key = page_user.key()
+        post_key = p.key()
         c.ancestor(post_key)
         c.order('-created')
         self.render("post.html", comments=c, p=p, page_user_name=name,
@@ -239,7 +239,7 @@ class BlogPage(Handler):
             page_user_key = page_user.key()
             q.ancestor(page_user_key)
             q.order('-created')
-            postsliked = ((p, self.has_liked(page_user, p)) for p in q)
+            postsliked = [(p, self.has_liked(page_user, p)) for p in q]
             self.render("posts.html", postsliked=postsliked,
                         page_user_name=page_user_key.name(),
                         username=cur_user_name)
