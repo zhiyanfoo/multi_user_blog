@@ -151,11 +151,6 @@ class HomePage(Handler):
         else:
             self.render("unknown_user.html")
 
-class Posts(Handler):
-    def get(self):
-        posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC")
-        self.render("index.html", blogs=posts)
-
 class Login(Handler):
     def err_render(self, username, msg):
         self.clear_cookies()
