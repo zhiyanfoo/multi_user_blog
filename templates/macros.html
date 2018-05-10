@@ -1,10 +1,10 @@
-{% macro render_post(page_user_name, p, cur_user_name, liked, sep=False) %}
-  {% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+{% macro render_post(page_user_name, post, cur_user_name, liked, sep=False) %}
+  {% set post_path = "/b/{}/{}".format(page_user_name, post.key().id()) %}
   <div class="post">
-    <h2><a href={{post_path}} class="post-title">{{p.title}}</a> 
-      | {{p.created.date()}}
+    <h2><a href={{post_path}} class="post-title">{{post.title}}</a> 
+      | {{post.created.date()}}
     </h2>
-    <p>{{p.post}}</p>
+    <p>{{post.post}}</p>
     {% if page_user_name == cur_user_name %}
       <form method="post" action={{post_path + "/edit"}}>
         <label>
@@ -32,7 +32,7 @@
           </form>
         {% endif %}
     {% endif %}
-      <div><p>Likes: {{p.likes}}</p></div>
+      <div><p>Likes: {{post.likes}}</p></div>
   </div>
 {% endmacro %}
 

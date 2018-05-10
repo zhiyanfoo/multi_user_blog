@@ -3,9 +3,9 @@
 
 
 {% block content %}
-{% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+{% set post_path = "/b/{}/{}".format(page_user_name, post.key().id()) %}
 <div class="posts">
-  {{ render_post(page_user_name, p, username, liked) }}
+  {{ render_post(page_user_name, post, username, liked) }}
   <div class=post>
     <h2>Comments</h2>
     {% for c in comments %}

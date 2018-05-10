@@ -7,8 +7,8 @@
 {% endif %}
 <div class="posts">
   <div class="post-top-title"><h3>Posts</h3></div>
-  {% for p, liked in postsliked %}
-  {{ render_post(page_user_name, p, username, liked) }}
+  {% for post, liked in postsliked %}
+  {{ render_post(page_user_name, post, username, liked) }}
   {% endfor %}
 </div>
 

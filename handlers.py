@@ -3,7 +3,7 @@ import jinja2
 import webapp2
 import re
 
-from models import Post, User, Comment 
+from models import Post, User, Comment
 from helpers import new_secrets, secret_salt
 from google.appengine.ext import db
 from datetime import timedelta, datetime
@@ -25,7 +25,7 @@ class Handler(webapp2.RequestHandler):
         self.write(self.render_str(template, **kw))
 
     def set_cookies(self, username, cookie_token):
-        expires = datetime.now() + timedelta(days=2) 
+        expires = datetime.now() + timedelta(days=2)
         self.response.set_cookie('username', username, expires=expires)
         self.response.set_cookie('token', cookie_token, expires=expires)
 
@@ -75,7 +75,7 @@ class AddPost(Handler):
             self.clear_cookies()
             self.redirect("/")
             return
-        
+
         self.render_front(user.key().name())
 
     def post(self):
@@ -90,8 +90,8 @@ class AddPost(Handler):
         if not (title and post):
             self.render_front(
                 user.key().name(),
-                title=title, 
-                post=post, 
+                title=title,
+                post=post,
                 error="All fields need to be filled.")
             return
 
@@ -108,18 +108,22 @@ class SinglePost(Handler):
             self.redirect("/")
             return
 
-        p = self.get_post(page_user, id)
-        if not p:
+        post = self.get_post(page_user, id)
+        if not post:
             self.write("Post does not exist")
             return
 
-        liked = self.has_liked(user, p) if user else None
-        c = db.Query(Comment)
-        post_key = p.key()
-        c.ancestor(post_key)
-        c.order('-created')
-        self.render("post.html", comments=c, p=p, page_user_name=name,
-                    username=current_user_name, liked=liked)
+        liked = self.has_liked(user, post) if user else None
+        comment_query = db.Query(Comment)
+        post_key = post.key()
+        comment_query.ancestor(post_key)
+        comment_query.order('-created')
+        self.render("post.html",
+                    comments=comment_query,
+                    post=post,
+                    page_user_name=name,
+                    username=current_user_name,
+                    liked=liked)
 
 class MainPage(Handler):
     def get(self):
@@ -135,7 +139,7 @@ class LoginSignup(Handler):
         signup_username = self.request.get("entered_signup_username")
         err_msg1 = self.request.get("err_msg1")
         err_msg2 = self.request.get("err_msg2")
-        self.render("unknown_user.html", 
+        self.render("unknown_user.html",
                     login_username=login_username,
                     signup_username=signup_username,
                     entered_login_username=login_username,
@@ -159,23 +163,23 @@ class Login(LoginSignup):
         if not (username and password):
             err_render("fill all login fields")
             return
-        
+
         user = User.get_by_key_name(username)
         if not user:
             err_render("username not found")
-            return 
+            return
 
         pw_hash, _ = secret_salt(password, user.pw_salt)
         if pw_hash != user.pw_hash:
             err_render("password invalid")
             return
-        
+
         cookie_token, user_secrets = new_secrets(password)
         for name, value in user_secrets.items():
             setattr(user, name, value)
 
         user.put()
-        expires = datetime.now() + timedelta(days=2) 
+        expires = datetime.now() + timedelta(days=2)
         self.set_cookies(username, cookie_token)
         self.redirect("/")
 
@@ -260,20 +264,20 @@ class EditPost(Handler):
         if not title and not post:
             self.render(
                 "editpost.html",
-                title=p.title, 
+                title=p.title,
                 post=p.post,
                 page_user_name=name,
-                p=p, 
+                p=p,
                 username=name)
             return
 
         if not (title and post):
             self.render(
                 "editpost.html",
-                title=title, 
+                title=title,
                 post=post,
                 page_user_name=name,
-                p=p, 
+                p=p,
                 username=name,
                 error="All fields need to be filled.")
             return
@@ -339,7 +343,7 @@ class AddComment(Handler):
         current_user_name = self.get_user_name(current_user)
         page_user = self.get_user(name)
         post = self.get_post(page_user, id)
-        Comment(comment=self.request.get("comment"), 
+        Comment(comment=self.request.get("comment"),
                 user=current_user_name,
                 parent=post).put()
         self.redirect(self.request.referer)
@@ -365,18 +369,18 @@ class EditComment(Handler):
         current_user = self.valid_user()
         current_user_name = self.get_user_name(current_user)
         page_user = self.get_user(name)
-        p = self.get_post(page_user, id)
-        c = Comment.get_by_id(int(c_id), parent=p.key())
-        comment = self.request.get("comment")
-        if not comment:
-            self.render("editcomment.html", 
-                        c=c,
+        post = self.get_post(page_user, id)
+        comment = Comment.get_by_id(int(c_id), parent=post.key())
+        comment_text = self.request.get("comment")
+        if not comment_text:
+            self.render("editcomment.html",
+                        c=comment,
                         page_user_name=name,
-                        liked=self.has_liked(current_user, p),
-                        p=p,
+                        liked=self.has_liked(current_user, post),
+                        p=post,
                         username=current_user_name)
             return
 
-        c.comment = comment
-        c.put()
+        comment.comment = comment_text
+        comment.put()
         self.redirect("/b/{}/{}".format(name, id))
