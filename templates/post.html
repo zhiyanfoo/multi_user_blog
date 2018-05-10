@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_post, render_comment %}
 
-
 {% block content %}
 {% set post_path = "/b/{}/{}".format(page_user_name, post.key().id()) %}
 <div class="posts">

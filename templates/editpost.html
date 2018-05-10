@@ -2,6 +2,7 @@
 {% from "macros.html" import edit_content, render_post %}
 
 {% block content %}
-{{ render_post(page_user_name, p) }}
-{{ edit_content(title, post, error) }}
+{{ render_post(page_user_name, post) }}
+{{ edit_content(title, post_text, error) }}
+<input type="hidden" name="redirect_page" value={{redirect_page}}>
 {% endblock %}

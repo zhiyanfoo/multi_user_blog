@@ -2,10 +2,10 @@
 {% from "macros.html" import edit_content, render_post %}
 
 {% block content %}
-{% set post_path = "/b/{}/{}".format(page_user_name, p.key().id()) %}
+{% set post_path = "/b/{}/{}".format(page_user_name, post.key().id()) %}
 {% set comment_path = post_path + "/{}/{}".format(c.user, c.key().id()) %}
 <div class="posts">
-  {{ render_post(page_user_name, p, username, liked) }}
+  {{ render_post(page_user_name, post, username, liked) }}
   {% if username %}
     <div class="form-wrap">
       <form method="post" action={{comment_path + "/edit"}}>

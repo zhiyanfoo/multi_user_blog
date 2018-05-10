@@ -141,15 +141,15 @@ class LoginSignup(Handler):
     def get(self):
         login_username = self.request.get("entered_login_username")
         signup_username = self.request.get("entered_signup_username")
-        err_msg1 = self.request.get("err_msg1")
-        err_msg2 = self.request.get("err_msg2")
+        error_msg1 = self.request.get("err_msg1")
+        error_msg2 = self.request.get("err_msg2")
         self.render("unknown_user.html",
                     login_username=login_username,
                     signup_username=signup_username,
                     entered_login_username=login_username,
                     entered_signup_username=signup_username,
-                    err_msg1=err_msg1,
-                    err_msg2=err_msg2)
+                    err_msg1=error_msg1,
+                    err_msg2=error_msg2)
 
 
 class Login(LoginSignup):
@@ -184,8 +184,7 @@ class Login(LoginSignup):
             setattr(user, name, value)
 
         user.put()
-        expires = datetime.now() + timedelta(days=2)
-        self.set_cookies(username, cookie_token, expires=expires)
+        self.set_cookies(username, cookie_token)
         self.redirect("/")
 
 
@@ -269,30 +268,30 @@ class EditPost(Handler):
         name = page_user.key().name()
 
         title = self.request.get("title")
-        post = self.request.get("post")
-        if not title and not post:
+        post_text = self.request.get("post")
+        if not title and not post_text:
             self.render(
                 "editpost.html",
                 title=p.title,
-                post=p.post,
+                post_text=p.post,
                 page_user_name=name,
-                p=p,
+                post=p,
                 username=name)
             return
 
-        if not (title and post):
+        if not (title and post_text):
             self.render(
                 "editpost.html",
                 title=title,
-                post=post,
+                post_text=post_text,
                 page_user_name=name,
-                p=p,
+                post=p,
                 username=name,
                 error="All fields need to be filled.")
             return
 
         p.title = title
-        p.post = post
+        p.post = post_text
         p.put()
         self.redirect("/b/" + name + "/" + id)
 
@@ -391,7 +390,7 @@ class EditComment(Handler):
                         c=comment,
                         page_user_name=name,
                         liked=self.has_liked(current_user, post),
-                        p=post,
+                        post=post,
                         username=current_user_name)
             return
 
