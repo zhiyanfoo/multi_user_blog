@@ -65,9 +65,9 @@ class Handler(webapp2.RequestHandler):
         return Post.get_by_id(int(id), parent=user.key())
 
 
-class NewPost(Handler):
+class AddPost(Handler):
     def render_front(self, username, title="", post="", error="", ):
-        self.render("new_post.html", username=username, title=title, post=post,
+        self.render("add_post.html", username=username, title=title, post=post,
                     error=error, page_user_name=username)
 
     def get(self):
@@ -100,7 +100,7 @@ class NewPost(Handler):
         p.put()
         self.redirect("/")
 
-class BlogPost(Handler):
+class SinglePost(Handler):
     def get(self, name, id):
         user = self.valid_user()
         cur_user_name = self.get_user_name(user)
@@ -223,7 +223,7 @@ class Logout(Handler):
         self.clear_cookies()
         self.redirect("/")
 
-class BlogPage(Handler):
+class UserPosts(Handler):
     def get(self, name):
         user = self.valid_user()
         if not user:

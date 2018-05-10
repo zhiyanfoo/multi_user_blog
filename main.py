@@ -17,18 +17,18 @@
 import webapp2
 from webapp2 import Route
 
-from handlers import (MainPage, Login, SignUp, NewPost, Logout, BlogPage, 
-                      BlogPost, EditPost, DeletePost, ToggleLike, AddComment,
-                      DeleteComment, EditComment)
+from handlers import (MainPage, Login, SignUp, AddPost, Logout, UserPosts, SinglePost,
+                      EditPost, DeletePost, ToggleLike, AddComment, DeleteComment,
+                      EditComment)
 
 app = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/login', Login),
     ('/signup', SignUp),
-    ('/newpost', NewPost),
+    ('/add_post', AddPost),
     ('/logout', Logout),
-    Route('/b/<name:\w+>', BlogPage),
-    Route(r'/b/<name:\w+>/<id:\d+>', BlogPost),
+    Route('/b/<name:\w+>', UserPosts),
+    Route(r'/b/<name:\w+>/<id:\d+>', SinglePost),
     Route(r'/b/<name:\w+>/<id:\d+>/edit', EditPost),
     Route(r'/b/<name:\w+>/<id:\d+>/delete', DeletePost),
     Route(r'/b/<name:\w+>/<id:\d+>/togglelike', ToggleLike),
