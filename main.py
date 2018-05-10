@@ -36,6 +36,7 @@ class Post(db.Model):
     post = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     likes = db.IntegerProperty(default=0)
+    liked_users = db.ListProperty(db.Key)
 
 class User(db.Model):
     pw_hash = db.StringProperty(required=True)
@@ -91,7 +92,8 @@ class Handler(webapp2.RequestHandler):
         return self.valid_user().key().name() == user_name
 
     def has_liked(self, user, post):
-        q = db.Query(user)
+        q = db.Query(User)
+        q.filter("__key__ =", user.key())
         q.filter("liked =", post.key())
         return q.get()
 
@@ -140,6 +142,9 @@ class BlogPost(Handler):
             self.redirect("/")
             return
         p = self.get_post(page_user, id)
+        if not p:
+            self.write("Post does not exist")
+            return
         liked = self.has_liked(user, p) if user else None
         c = db.Query(Comment)
         post_key = p.key()
@@ -252,6 +257,10 @@ class Logout(Handler):
 class BlogPage(Handler):
     def get(self, name):
         user = self.valid_user()
+        if not user:
+            self.clear_cookies()
+            self.redirect("/")
+            return
         cur_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
         if page_user:
@@ -259,7 +268,7 @@ class BlogPage(Handler):
             page_user_key = page_user.key()
             q.ancestor(page_user_key)
             q.order('-created')
-            postsliked = [(p, self.has_liked(page_user, p)) for p in q]
+            postsliked = [(p, self.has_liked(user, p)) for p in q]
             self.render("posts.html", postsliked=postsliked,
                         page_user_name=page_user_key.name(),
                         username=cur_user_name)
@@ -308,6 +317,14 @@ class DeletePost(Handler):
         if self.cur_user_match(name) and self.request.get("delete"):
             page_user = self.get_user(name)
             p = self.get_post(page_user, id)
+            post_comments_q = db.Query(Comment)
+            for comment in post_comments_q.ancestor(p.key()):
+                comment.delete()
+            for user_key in p.liked_users:
+                user = User.get(user_key)
+                user.liked.remove(p.key())
+                user.put()
+
             p.delete()
             self.redirect("/b/" + name)
         else:
@@ -328,11 +345,13 @@ class ToggleLike(Handler):
             if self.has_liked(cur_user, p):
                 cur_user.liked.remove(p.key())
                 cur_user.put()
+                p.liked_users.remove(cur_user.key())
                 p.likes -= 1
                 p.put()
             else:
                 cur_user.liked.append(p.key())
                 cur_user.put()
+                p.liked_users.append(cur_user.key())
                 p.likes += 1
                 p.put()
 
