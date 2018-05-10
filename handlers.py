@@ -271,7 +271,7 @@ class EditPost(Handler):
         post_text = self.request.get("post")
         if not title and not post_text:
             self.render(
-                "editpost.html",
+                "edit_post.html",
                 title=p.title,
                 post_text=p.post,
                 page_user_name=name,
@@ -281,7 +281,7 @@ class EditPost(Handler):
 
         if not (title and post_text):
             self.render(
-                "editpost.html",
+                "edit_post.html",
                 title=title,
                 post_text=post_text,
                 page_user_name=name,
@@ -386,7 +386,7 @@ class EditComment(Handler):
         comment = Comment.get_by_id(int(c_id), parent=post.key())
         comment_text = self.request.get("comment")
         if not comment_text:
-            self.render("editcomment.html",
+            self.render("edit_comment.html",
                         c=comment,
                         page_user_name=name,
                         liked=self.has_liked(current_user, post),
