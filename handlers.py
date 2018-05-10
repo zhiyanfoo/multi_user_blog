@@ -301,17 +301,17 @@ class DeletePost(Handler):
     def post(self, name, id):
         if self.current_user_match(name) and self.request.get("delete"):
             page_user = self.get_user(name)
-            p = self.get_post(page_user, id)
+            post = self.get_post(page_user, id)
             post_comments_q = db.Query(Comment)
-            for comment in post_comments_q.ancestor(p.key()):
+            for comment in post_comments_q.ancestor(post.key()):
                 comment.delete()
 
-            for user_key in p.liked_users:
+            for user_key in post.liked_users:
                 user = User.get(user_key)
-                user.liked.remove(p.key())
+                user.liked.remove(post.key())
                 user.put()
 
-            p.delete()
+            post.delete()
             self.redirect("/b/" + name)
         else:
             self.clear_cookies()
@@ -327,20 +327,20 @@ class ToggleLike(Handler):
             self.redirect("/")
             return
 
-        p = self.get_post(page_user, id)
+        post = self.get_post(page_user, id)
         if current_user.key() != page_user.key():
-            if self.has_liked(current_user, p):
-                current_user.liked.remove(p.key())
+            if self.has_liked(current_user, post):
+                current_user.liked.remove(post.key())
                 current_user.put()
-                p.liked_users.remove(current_user.key())
-                p.likes -= 1
-                p.put()
+                post.liked_users.remove(current_user.key())
+                post.likes -= 1
+                post.put()
             else:
-                current_user.liked.append(p.key())
+                current_user.liked.append(post.key())
                 current_user.put()
-                p.liked_users.append(current_user.key())
-                p.likes += 1
-                p.put()
+                post.liked_users.append(current_user.key())
+                post.likes += 1
+                post.put()
 
         self.redirect(self.request.referer)
 
