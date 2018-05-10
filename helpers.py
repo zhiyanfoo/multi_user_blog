@@ -1,6 +1,7 @@
 import hashlib
 import random
 
+
 def new_secrets(pw):
     pw_hash, pw_salt = secret_salt(pw)
     cookie_token = make_token()
@@ -13,8 +14,11 @@ def new_secrets(pw):
     }
     return cookie_token, user_secrets
 
+
 def make_token():
-    return "".join(str(random.SystemRandom().randint(0,26)) for _ in range(16))
+    return "".join(str(random.SystemRandom().randint(0, 26))
+                   for _ in range(16))
+
 
 def secret_salt(s, salt=None):
     if not salt:

@@ -14,6 +14,7 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
+
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
@@ -99,6 +100,7 @@ class AddPost(Handler):
         post.put()
         self.redirect("/")
 
+
 class SinglePost(Handler):
     def get(self, name, id):
         user = self.valid_user()
@@ -125,6 +127,7 @@ class SinglePost(Handler):
                     username=current_user_name,
                     liked=liked)
 
+
 class MainPage(Handler):
     def get(self):
         user = self.valid_user()
@@ -132,6 +135,7 @@ class MainPage(Handler):
             self.redirect("/b/" + user.key().name())
         else:
             self.render("unknown_user.html")
+
 
 class LoginSignup(Handler):
     def get(self):
@@ -146,6 +150,7 @@ class LoginSignup(Handler):
                     entered_signup_username=signup_username,
                     err_msg1=err_msg1,
                     err_msg2=err_msg2)
+
 
 class Login(LoginSignup):
     def err_render(self, username, msg):
@@ -180,8 +185,9 @@ class Login(LoginSignup):
 
         user.put()
         expires = datetime.now() + timedelta(days=2)
-        self.set_cookies(username, cookie_token)
+        self.set_cookies(username, cookie_token, expires=expires)
         self.redirect("/")
+
 
 class SignUp(LoginSignup):
     def err_render(self, username, msg):
@@ -222,10 +228,12 @@ class SignUp(LoginSignup):
         self.set_cookies(username, cookie_token)
         self.redirect("/")
 
+
 class Logout(Handler):
     def post(self):
         self.clear_cookies()
         self.redirect("/")
+
 
 class UserPosts(Handler):
     def get(self, name):
@@ -248,6 +256,7 @@ class UserPosts(Handler):
                         username=current_user_name)
         else:
             self.write("404: Blog not found.")
+
 
 class EditPost(Handler):
     def post(self, name, id):
@@ -285,7 +294,8 @@ class EditPost(Handler):
         p.title = title
         p.post = post
         p.put()
-        self.redirect("/b/"+ name + "/" + id)
+        self.redirect("/b/" + name + "/" + id)
+
 
 class DeletePost(Handler):
     def post(self, name, id):
@@ -306,6 +316,7 @@ class DeletePost(Handler):
         else:
             self.clear_cookies()
             self.redirect("/")
+
 
 class ToggleLike(Handler):
     def post(self, name, id):
@@ -333,6 +344,7 @@ class ToggleLike(Handler):
 
         self.redirect(self.request.referer)
 
+
 class AddComment(Handler):
     def post(self, id, name):
         current_user = self.valid_user()
@@ -348,6 +360,7 @@ class AddComment(Handler):
                 parent=post).put()
         self.redirect(self.request.referer)
 
+
 class DeleteComment(Handler):
     def post(self, id, name, c_user_name, c_id):
         if self.current_user_match(c_user_name):
@@ -359,6 +372,7 @@ class DeleteComment(Handler):
         else:
             self.clear_cookies()
             self.redirect("/")
+
 
 class EditComment(Handler):
     def post(self, id, name, c_user_name, c_id):
