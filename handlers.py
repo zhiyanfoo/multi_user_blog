@@ -19,8 +19,7 @@ class Handler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def render_str(self, template, **params):
-        t = jinja_env.get_template(template)
-        return t.render(params)
+        return jinja_env.get_template(template).render(params)
 
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
@@ -51,7 +50,7 @@ class Handler(webapp2.RequestHandler):
     def get_user_name(self, user):
         return user.key().name() if user else None
 
-    def cur_user_match(self, user_name):
+    def current_user_match(self, user_name):
         user = self.valid_user()
         return user.key().name() == user_name if user else None
 
@@ -103,7 +102,7 @@ class AddPost(Handler):
 class SinglePost(Handler):
     def get(self, name, id):
         user = self.valid_user()
-        cur_user_name = self.get_user_name(user)
+        current_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
         if not page_user:
             self.redirect("/")
@@ -120,7 +119,7 @@ class SinglePost(Handler):
         c.ancestor(post_key)
         c.order('-created')
         self.render("post.html", comments=c, p=p, page_user_name=name,
-                    username=cur_user_name, liked=liked)
+                    username=current_user_name, liked=liked)
 
 class MainPage(Handler):
     def get(self):
@@ -174,6 +173,7 @@ class Login(LoginSignup):
         cookie_token, user_secrets = new_secrets(password)
         for name, value in user_secrets.items():
             setattr(user, name, value)
+
         user.put()
         expires = datetime.now() + timedelta(days=2) 
         self.set_cookies(username, cookie_token)
@@ -230,7 +230,8 @@ class UserPosts(Handler):
             self.clear_cookies()
             self.redirect("/")
             return
-        cur_user_name = self.get_user_name(user)
+
+        current_user_name = self.get_user_name(user)
         page_user = self.get_user(name)
         if page_user:
             q = db.Query(Post)
@@ -240,15 +241,16 @@ class UserPosts(Handler):
             postsliked = [(p, self.has_liked(user, p)) for p in q]
             self.render("posts.html", postsliked=postsliked,
                         page_user_name=page_user_key.name(),
-                        username=cur_user_name)
+                        username=current_user_name)
         else:
             self.write("404: Blog not found.")
 
 class EditPost(Handler):
     def post(self, name, id):
-        if not self.cur_user_match(name):
+        if not self.current_user_match(name):
             self.clear_cookies()
             self.redirect('/')
+
         page_user = self.get_user(name)
         p = self.get_post(page_user, id)
         name = page_user.key().name()
@@ -283,12 +285,13 @@ class EditPost(Handler):
 
 class DeletePost(Handler):
     def post(self, name, id):
-        if self.cur_user_match(name) and self.request.get("delete"):
+        if self.current_user_match(name) and self.request.get("delete"):
             page_user = self.get_user(name)
             p = self.get_post(page_user, id)
             post_comments_q = db.Query(Comment)
             for comment in post_comments_q.ancestor(p.key()):
                 comment.delete()
+
             for user_key in p.liked_users:
                 user = User.get(user_key)
                 user.liked.remove(p.key())
@@ -302,25 +305,25 @@ class DeletePost(Handler):
 
 class ToggleLike(Handler):
     def post(self, name, id):
-        cur_user = self.valid_user()
+        current_user = self.valid_user()
         page_user = self.get_user(name)
-        if not (cur_user and page_user):
+        if not (current_user and page_user):
             self.clear_cookies()
             self.redirect("/")
             return
 
         p = self.get_post(page_user, id)
-        if cur_user.key() != page_user.key():
-            if self.has_liked(cur_user, p):
-                cur_user.liked.remove(p.key())
-                cur_user.put()
-                p.liked_users.remove(cur_user.key())
+        if current_user.key() != page_user.key():
+            if self.has_liked(current_user, p):
+                current_user.liked.remove(p.key())
+                current_user.put()
+                p.liked_users.remove(current_user.key())
                 p.likes -= 1
                 p.put()
             else:
-                cur_user.liked.append(p.key())
-                cur_user.put()
-                p.liked_users.append(cur_user.key())
+                current_user.liked.append(p.key())
+                current_user.put()
+                p.liked_users.append(current_user.key())
                 p.likes += 1
                 p.put()
 
@@ -328,21 +331,22 @@ class ToggleLike(Handler):
 
 class AddComment(Handler):
     def post(self, id, name):
-        cur_user = self.valid_user()
-        if not cur_user:
+        current_user = self.valid_user()
+        if not current_user:
             self.redirect('/')
             return
-        cur_user_name = self.get_user_name(cur_user)
+
+        current_user_name = self.get_user_name(current_user)
         page_user = self.get_user(name)
         post = self.get_post(page_user, id)
         Comment(comment=self.request.get("comment"), 
-                user=cur_user_name,
+                user=current_user_name,
                 parent=post).put()
         self.redirect(self.request.referer)
 
 class DeleteComment(Handler):
     def post(self, id, name, c_user_name, c_id):
-        if self.cur_user_match(c_user_name):
+        if self.current_user_match(c_user_name):
             page_user = self.get_user(name)
             post = self.get_post(page_user, id)
             comment = Comment.get_by_id(int(c_id), parent=post.key())
@@ -354,12 +358,12 @@ class DeleteComment(Handler):
 
 class EditComment(Handler):
     def post(self, id, name, c_user_name, c_id):
-        if not self.cur_user_match(c_user_name):
+        if not self.current_user_match(c_user_name):
             self.clear_cookies()
             self.redirect('/')
 
-        cur_user = self.valid_user()
-        cur_user_name = self.get_user_name(cur_user)
+        current_user = self.valid_user()
+        current_user_name = self.get_user_name(current_user)
         page_user = self.get_user(name)
         p = self.get_post(page_user, id)
         c = Comment.get_by_id(int(c_id), parent=p.key())
@@ -368,9 +372,9 @@ class EditComment(Handler):
             self.render("editcomment.html", 
                         c=c,
                         page_user_name=name,
-                        liked=self.has_liked(cur_user, p),
+                        liked=self.has_liked(current_user, p),
                         p=p,
-                        username=cur_user_name)
+                        username=current_user_name)
             return
 
         c.comment = comment
