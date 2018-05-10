@@ -65,69 +65,6 @@ class Handler(webapp2.RequestHandler):
         return Post.get_by_id(int(id), parent=user.key())
 
 
-class AddPost(Handler):
-    def render_front(self, username, title="", post="", error="", ):
-        self.render("add_post.html", username=username, title=title, post=post,
-                    error=error, page_user_name=username)
-
-    def get(self):
-        user = self.valid_user()
-        if not user:
-            self.clear_cookies()
-            self.redirect("/")
-            return
-
-        self.render_front(user.key().name())
-
-    def post(self):
-        user = self.valid_user()
-        if not user:
-            self.clear_cookies()
-            self.redirect("/")
-            return
-
-        title = self.request.get("title").strip()
-        post = self.request.get("post").strip()
-        if not (title and post):
-            self.render_front(
-                user.key().name(),
-                title=title,
-                post=post,
-                error="All fields need to be filled.")
-            return
-
-        post = Post(title=title, post=post, parent=user)
-        post.put()
-        self.redirect("/")
-
-
-class SinglePost(Handler):
-    def get(self, name, id):
-        user = self.valid_user()
-        current_user_name = self.get_user_name(user)
-        page_user = self.get_user(name)
-        if not page_user:
-            self.redirect("/")
-            return
-
-        post = self.get_post(page_user, id)
-        if not post:
-            self.write("Post does not exist")
-            return
-
-        liked = self.has_liked(user, post) if user else None
-        comment_query = db.Query(Comment)
-        post_key = post.key()
-        comment_query.ancestor(post_key)
-        comment_query.order('-created')
-        self.render("post.html",
-                    comments=comment_query,
-                    post=post,
-                    page_user_name=name,
-                    username=current_user_name,
-                    liked=liked)
-
-
 class MainPage(Handler):
     def get(self):
         user = self.valid_user()
@@ -234,6 +171,42 @@ class Logout(Handler):
         self.redirect("/")
 
 
+class AddPost(Handler):
+    def render_front(self, username, title="", post="", error="", ):
+        self.render("add_post.html", username=username, title=title, post=post,
+                    error=error, page_user_name=username)
+
+    def get(self):
+        user = self.valid_user()
+        if not user:
+            self.clear_cookies()
+            self.redirect("/")
+            return
+
+        self.render_front(user.key().name())
+
+    def post(self):
+        user = self.valid_user()
+        if not user:
+            self.clear_cookies()
+            self.redirect("/")
+            return
+
+        title = self.request.get("title").strip()
+        post = self.request.get("post").strip()
+        if not (title and post):
+            self.render_front(
+                user.key().name(),
+                title=title,
+                post=post,
+                error="All fields need to be filled.")
+            return
+
+        post = Post(title=title, post=post, parent=user)
+        post.put()
+        self.redirect("/")
+
+
 class UserPosts(Handler):
     def get(self, name):
         user = self.valid_user()
@@ -255,6 +228,33 @@ class UserPosts(Handler):
                         username=current_user_name)
         else:
             self.write("404: Blog not found.")
+
+
+class SinglePost(Handler):
+    def get(self, name, id):
+        user = self.valid_user()
+        current_user_name = self.get_user_name(user)
+        page_user = self.get_user(name)
+        if not page_user:
+            self.redirect("/")
+            return
+
+        post = self.get_post(page_user, id)
+        if not post:
+            self.write("Post does not exist")
+            return
+
+        liked = self.has_liked(user, post) if user else None
+        comment_query = db.Query(Comment)
+        post_key = post.key()
+        comment_query.ancestor(post_key)
+        comment_query.order('-created')
+        self.render("post.html",
+                    comments=comment_query,
+                    post=post,
+                    page_user_name=name,
+                    username=current_user_name,
+                    liked=liked)
 
 
 class EditPost(Handler):
