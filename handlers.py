@@ -95,8 +95,8 @@ class AddPost(Handler):
                 error="All fields need to be filled.")
             return
 
-        p = Post(title=title, post=post, parent=user)
-        p.put()
+        post = Post(title=title, post=post, parent=user)
+        post.put()
         self.redirect("/")
 
 class SinglePost(Handler):
@@ -242,7 +242,7 @@ class UserPosts(Handler):
             page_user_key = page_user.key()
             q.ancestor(page_user_key)
             q.order('-created')
-            postsliked = [(p, self.has_liked(user, p)) for p in q]
+            postsliked = [(post, self.has_liked(user, post)) for post in q]
             self.render("posts.html", postsliked=postsliked,
                         page_user_name=page_user_key.name(),
                         username=current_user_name)
