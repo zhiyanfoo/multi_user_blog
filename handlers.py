@@ -52,7 +52,8 @@ class Handler(webapp2.RequestHandler):
         return user.key().name() if user else None
 
     def cur_user_match(self, user_name):
-        return self.valid_user().key().name() == user_name
+        user = self.valid_user()
+        return user.key().name() == user_name if user else None
 
     def has_liked(self, user, post):
         q = db.Query(User)
@@ -353,7 +354,7 @@ class DeleteComment(Handler):
 
 class EditComment(Handler):
     def post(self, id, name, c_user_name, c_id):
-        if not self.cur_user_match(name):
+        if not self.cur_user_match(c_user_name):
             self.clear_cookies()
             self.redirect('/')
 
