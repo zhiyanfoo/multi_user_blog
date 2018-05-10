@@ -20,6 +20,7 @@ import re
 from datetime import timedelta, datetime
 import random
 from functools import partial
+import urllib
 
 import webapp2
 from webapp2 import Route
@@ -108,6 +109,7 @@ class NewPost(Handler):
         if not user:
             self.clear_cookies()
             self.redirect("/")
+        
         self.render_front(user.key().name())
 
     def post(self):
@@ -116,14 +118,14 @@ class NewPost(Handler):
             self.clear_cookies()
             self.redirect("/")
             return
-        title = self.request.get("title")
-        post = self.request.get("post")
+        title = self.request.get("title").strip()
+        post = self.request.get("post").strip()
         if not (title and post):
             self.render_front(
                 user.key().name(),
                 title=title, 
                 post=post, 
-                error="Error: All fields need to be filled.")
+                error="All fields need to be filled.")
             return
         p = Post(title=title, post=post, parent=user)
         p.put()
@@ -154,12 +156,28 @@ class MainPage(Handler):
         else:
             self.render("unknown_user.html")
 
-class Login(Handler):
+class LoginSignup(Handler):
+    def get(self):
+        login_username = self.request.get("entered_login_username")
+        signup_username = self.request.get("entered_signup_username")
+        err_msg1 = self.request.get("err_msg1")
+        err_msg2 = self.request.get("err_msg2")
+        self.render("unknown_user.html", 
+                    login_username=login_username,
+                    signup_username=signup_username,
+                    entered_login_username=login_username,
+                    entered_signup_username=signup_username,
+                    err_msg1=err_msg1,
+                    err_msg2=err_msg2)
+
+class Login(LoginSignup):
     def err_render(self, username, msg):
         self.clear_cookies()
-        self.render("unknown_user.html", 
-                    login_username=username, 
-                    err_msg1="Error: " + msg)
+        parameters = urllib.urlencode(
+            {'entered_login_username': username,
+             'err_msg1': msg})
+        url = '/login?' + parameters
+        self.redirect(url)
 
     def post(self):
         username = self.request.get("login_username")
@@ -187,19 +205,21 @@ class Login(Handler):
         self.set_cookies(username, cookie_token)
         self.redirect("/")
 
-class SignUp(Handler):
+class SignUp(LoginSignup):
     def err_render(self, username, msg):
         self.clear_cookies()
-        self.render("unknown_user.html", 
-                    signup_username=username,
-                    err_msg2="Error: " + msg)
+        parameters = urllib.urlencode(
+            {'entered_signup_username': username,
+             'err_msg2': msg})
+        url = '/signup?' + parameters
+        self.redirect(url)
 
     def post(self):
         username = self.request.get("signup_username")
-        password1 = self.request.get("signup_password1")
-        password2 = self.request.get("signup_password2")
+        password = self.request.get("signup_password")
+        password_confirm = self.request.get("signup_password_confirm")
         err_render = partial(self.err_render, username)
-        if not (username and password1 and password2):
+        if not (username and password and password_confirm):
             err_render("fill all signup fields")
             return
 
@@ -210,16 +230,16 @@ class SignUp(Handler):
                        " [a-zA-Z0-9_]")
             return
 
-        if password1 != password2:
-            err_render("passwords are not equal")
-            return
-
         user = User.get_by_key_name(username)
         if user:
             err_render("username already taken")
             return
 
-        cookie_token, user_secrets = new_secrets(password1)
+        if password != password_confirm:
+            err_render("passwords are not equal")
+            return
+
+        cookie_token, user_secrets = new_secrets(password)
         User(key_name=username, **user_secrets).put()
         self.set_cookies(username, cookie_token)
         self.redirect("/")
@@ -275,7 +295,7 @@ class EditPost(Handler):
                 page_user_name=name,
                 p=p, 
                 username=name,
-                error="Error: All fields need to be filled.")
+                error="All fields need to be filled.")
             return
 
         p.title = title
@@ -299,7 +319,8 @@ class ToggleLike(Handler):
         cur_user = self.valid_user()
         page_user = self.get_user(name)
         if not (cur_user and page_user):
-            redirect("/")
+            self.clear_cookies()
+            self.redirect("/")
             return
 
         p = self.get_post(page_user, id)
