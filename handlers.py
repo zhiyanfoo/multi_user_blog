@@ -258,6 +258,22 @@ class SinglePost(Handler):
 
 
 class EditPost(Handler):
+    def get(self, name, id):
+        if not self.current_user_match(name):
+            self.clear_cookies()
+            self.redirect('/')
+
+        page_user = self.get_user(name)
+        p = self.get_post(page_user, id)
+        name = page_user.key().name()
+        self.render(
+            "edit_post.html",
+            title=p.title,
+            post_text=p.post,
+            page_user_name=name,
+            post=p,
+            username=name)
+
     def post(self, name, id):
         if not self.current_user_match(name):
             self.clear_cookies()
@@ -269,25 +285,8 @@ class EditPost(Handler):
 
         title = self.request.get("title")
         post_text = self.request.get("post")
-        if not title and not post_text:
-            self.render(
-                "edit_post.html",
-                title=p.title,
-                post_text=p.post,
-                page_user_name=name,
-                post=p,
-                username=name)
-            return
-
-        if not (title and post_text):
-            self.render(
-                "edit_post.html",
-                title=title,
-                post_text=post_text,
-                page_user_name=name,
-                post=p,
-                username=name,
-                error="All fields need to be filled.")
+        if not title or not post_text:
+            self.redirect("/b/" + name + "/" + id + "/edit")
             return
 
         p.title = title
@@ -354,6 +353,11 @@ class AddComment(Handler):
         current_user_name = self.get_user_name(current_user)
         page_user = self.get_user(name)
         post = self.get_post(page_user, id)
+        comment = self.request.get("comment")
+        if not comment:
+            self.redirect("/b/{}/{}".format(name, id))
+            return
+
         Comment(comment=self.request.get("comment"),
                 user=current_user_name,
                 parent=post).put()
@@ -374,6 +378,22 @@ class DeleteComment(Handler):
 
 
 class EditComment(Handler):
+
+    def get(self, id, name, c_user_name, c_id):
+        current_user = self.valid_user()
+        current_user_name = self.get_user_name(current_user)
+        page_user = self.get_user(name)
+        post = self.get_post(page_user, id)
+        comment = Comment.get_by_id(int(c_id), parent=post.key())
+        comment_text = self.request.get("comment")
+        self.render("edit_comment.html",
+                    c=comment,
+                    page_user_name=name,
+                    liked=self.has_liked(current_user, post),
+                    post=post,
+                    username=current_user_name)
+
+
     def post(self, id, name, c_user_name, c_id):
         if not self.current_user_match(c_user_name):
             self.clear_cookies()
@@ -386,12 +406,7 @@ class EditComment(Handler):
         comment = Comment.get_by_id(int(c_id), parent=post.key())
         comment_text = self.request.get("comment")
         if not comment_text:
-            self.render("edit_comment.html",
-                        c=comment,
-                        page_user_name=name,
-                        liked=self.has_liked(current_user, post),
-                        post=post,
-                        username=current_user_name)
+            self.redirect("/b/{}/{}/{}/{}/edit".format(name, id, c_user_name, c_id))
             return
 
         comment.comment = comment_text

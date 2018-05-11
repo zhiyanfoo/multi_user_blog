@@ -6,7 +6,7 @@
     </h2>
     <p>{{post.post}}</p>
     {% if page_user_name == cur_user_name %}
-      <form method="post" action={{post_path + "/edit"}}>
+      <form method="get" action={{post_path + "/edit"}}>
         <label>
           <input type="submit" name="edit" value="edit">
         </label>
@@ -42,7 +42,7 @@
     <h2>{{c.user}} | {{c.created.date()}}</h2>
     <p>{{c.comment}}</p>
     {% if c.user == cur_user_name %}
-      <form method="post" action={{comment_path + "/edit"}}>
+      <form method="get" action={{comment_path + "/edit"}}>
         <label>
           <input type="submit" name="edit" value="edit">
         </label>
